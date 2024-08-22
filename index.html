@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quiz Pedro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+           /* O mesmo CSS fornecido anteriormente */
+           * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f0f0;
+            overflow-x: hidden;
+        }
+        #app {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: #fff;
+            min-height: 100vh;
+            position: relative;
+            transition: 0.3s;
+        }
+        .header {
+            background-color: #000;
+            color: #ffd700;
+            text-align: center;
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            position: relative;
+        }
+        .menu-toggle {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .question-container {
+            padding: 20px;
+        }
+        .question {
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+        .option {
+            background-color: #f1f1f1;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+            color: #333;
+        }
+        .option:hover {
+            background-color: #e0e0e0;
+            transform: translateY(-2px);
+        }
+        .option.correct {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .option.incorrect {
+            background-color: #f44336;
+            color: white;
+        }
+        .result {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .next-btn, .restart-btn, .skip-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #ffd700;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .next-btn:hover, .restart-btn:hover, .skip-btn:hover {
+            background-color: #e6c200;
+        }
+        .progress-bar {
+            height: 5px;
+            background-color: #e0e0e0;
+        }
+        .progress {
+            height: 100%;
+            background-color: #ffd700;
+            transition: width 0.3s ease;
+        }
+        .score, .timer {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 10px;
+            color: #333;
+        }
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -250px;
+            width: 250px;
+            height: 100%;
+            background-color: #333;
+            padding: 20px;
+            transition: 0.3s;
+            z-index: 1000;
+        }
+        .side-menu.active {
+            left: 0;
+        }
+        .side-menu ul {
+            list-style-type: none;
+        }
+        .side-menu ul li {
+            margin-bottom: 15px;
+        }
+        .side-menu ul li a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 18px;
+            display: block;
+            padding: 5px 0;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <span class="menu-toggle" id="menu-toggle"><i class="fas fa-bars"></i></span>
+            Pedro Programador
+        </div>
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        <div class="question-container">
+            <div class="timer" id="timer">Tempo: 30s</div>
+            <div class="question animate__animated animate__fadeIn" id="question"></div>
+            <div class="options" id="options"></div>
+            <div class="result animate__animated animate__bounceIn" id="result"></div>
+            <div class="score" id="score"></div>
+        </div>
+        <button class="next-btn animate__animated animate__fadeIn" id="next-btn" style="display: none;">Próxima Pergunta</button>
+        <button class="skip-btn animate__animated animate__fadeIn" id="skip-btn">Pular Pergunta</button>
+        <button class="restart-btn animate__animated animate__fadeIn" id="restart-btn" style="display: none;">Reiniciar Quiz</button>
+    </div>
+
+    <div class="side-menu" id="side-menu">
+        <ul>
+            <li><a href="#" id="show-scores">Pontuações</a></li>
+            <li><a href="#" id="show-help">Ajuda</a></li>
+            <li><a href="#" id="restart-game">Reiniciar Jogo</a></li>
+        </ul>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <script>
+        // Seleciona os elementos HTML
+        const menuToggle = document.getElementById('menu-toggle');
+        const sideMenu = document.getElementById('side-menu');
+        const overlay = document.getElementById('overlay');
+        const showScores = document.getElementById('show-scores');
+        const showHelp = document.getElementById('show-help');
+        const restartGame = document.getElementById('restart-game');
+        const skipBtn = document.getElementById('skip-btn');
+        const timerEl = document.getElementById('timer');
+        const progress = document.getElementById('progress');
+        const questionEl = document.getElementById('question');
+        const optionsEl = document.getElementById('options');
+        const resultEl = document.getElementById('result');
+        const scoreEl = document.getElementById('score');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+
+        let timer;
+        let timeLeft = 30;
+        let currentQuestionIndex = 0;
+        let currentQuestions = [];
+        let score = 0;
+        let helpUsed = false;
+        let questionSkipped = false;
+
+        const allQuestions = [
+    { question: "Qual é o propósito da tag `<meta>` no HTML?", options: ["Define metadados", "Cria uma nova seção", "Adiciona um link externo"], answer: 0, hint: "Metadados são informações sobre o documento." },
+    { question: "Como você cria um hyperlink em HTML?", options: ["<a href='url'>texto</a>", "<link href='url'>texto</link>", "<hyperlink href='url'>texto</hyperlink>"], answer: 0, hint: "O atributo 'href' define o endereço do link." },
+    { question: "Qual tag HTML é usada para criar uma lista não ordenada?", options: ["<ol>", "<ul>", "<list>"], answer: 1, hint: "A lista não ordenada usa marcadores." },
+    { question: "Qual atributo da tag `<input>` define o tipo de entrada?", options: ["value", "name", "type"], answer: 2, hint: "O tipo de entrada pode ser texto, senha, etc." },
+    { question: "Como você adiciona uma imagem a um documento HTML?", options: ["<picture src='url' alt='descrição'>", "<img src='url' alt='descrição'>", "<image src='url' alt='descrição'>"], answer: 1, hint: "A tag 'img' é usada para imagens." },
+    { question: "Qual é a função da tag `<form>` em HTML?", options: ["Cria uma tabela", "Define um formulário", "Adiciona um parágrafo"], answer: 1, hint: "A tag 'form' é usada para coletar dados do usuário." },
+    { question: "Qual tag HTML é usada para criar uma tabela?", options: ["<grid>", "<table>", "<list>"], answer: 1, hint: "A tabela usa a tag 'table'." },
+    { question: "Como você define uma seção de navegação em HTML5?", options: ["<header>", "<nav>", "<menu>"], answer: 1, hint: "A tag 'nav' define a navegação do site." },
+    { question: "Qual é a tag usada para definir um título de nível 1 em HTML?", options: ["<title>", "<h1>", "<header>"], answer: 1, hint: "A tag 'h1' é para o título principal." },
+    { question: "Como você inclui um comentário em um documento HTML?", options: ["/* comentário */", "<!-- comentário -->", "// comentário"], answer: 1, hint: "Comentários são incluídos com '!--' e '-->'." },
+    { question: "Qual tag HTML é usada para criar um botão?", options: ["<input type='button'>", "<btn>", "<button>"], answer: 2, hint: "A tag 'button' cria um botão interativo." },
+    { question: "Como você define a área de um mapa de imagem?", options: ["<image>", "<map>", "<area>"], answer: 2, hint: "A tag 'area' define áreas clicáveis em um mapa de imagem." },
+    { question: "Qual é a tag usada para incluir um vídeo em HTML5?", options: ["<movie>", "<media>", "<video>"], answer: 2, hint: "A tag 'video' é usada para incluir vídeos." },
+    { question: "Qual atributo da tag `<img>` define a descrição alternativa da imagem?", options: ["title", "description", "alt"], answer: 2, hint: "O atributo 'alt' fornece uma descrição alternativa." },
+    { question: "Qual tag HTML é usada para criar uma âncora?", options: ["<anchor>", "<link>", "<a>"], answer: 2, hint: "A tag 'a' é usada para criar links." },
+    { question: "Como você inclui um arquivo CSS externo em um documento HTML?", options: ["<style src='style.css'></style>", "<link rel='stylesheet' href='style.css'>", "<css href='style.css'></css>"], answer: 1, hint: "A tag 'link' é usada para incluir CSS externo." },
+    { question: "Qual tag HTML é usada para definir um parágrafo?", options: ["<text>", "<paragraph>", "<p>"], answer: 2, hint: "A tag 'p' define um parágrafo." },
+    { question: "Como você cria um campo de texto multilinha em HTML?", options: ["<input type='textarea'>", "<text>", "<textarea>"], answer: 2, hint: "A tag 'textarea' cria um campo de texto multilinha." },
+    { question: "Qual tag HTML é usada para incluir um script JavaScript?", options: ["<code>", "<js>", "<script>"], answer: 2, hint: "A tag 'script' inclui JavaScript no documento." },
+    { question: "Qual é a tag HTML para criar uma lista ordenada?", options: ["<list>", "<ul>", "<ol>"], answer: 2, hint: "A lista ordenada usa números para itens." },
+    { question: "Como você define uma seção em HTML5?", options: ["<div>", "<area>", "<section>"], answer: 2, hint: "A tag 'section' define uma seção temática." },
+    { question: "Qual tag HTML é usada para criar uma tabela de dados?", options: ["<data>", "<grid>", "<table>"], answer: 2, hint: "A tag 'table' cria uma tabela de dados." },
+    { question: "Qual é a tag HTML para definir uma célula de tabela?", options: ["<th>", "<cell>", "<td>"], answer: 2, hint: "A tag 'td' define uma célula de tabela padrão." },
+        { question: "Qual é a propriedade CSS usada para mudar a cor do texto?", options: ["color", "background-color", "font-color"], answer: 0, hint: "A propriedade 'color' altera a cor do texto." },
+    { question: "Como você aplica um estilo de fonte em CSS?", options: ["font-style", "text-style", "font-family"], answer: 2, hint: "A propriedade 'font-family' define a fonte." },
+    { question: "Qual é a unidade CSS para definir o tamanho da fonte em pixels?", options: ["pt", "em", "px"], answer: 2, hint: "A unidade 'px' é usada para tamanhos de fonte em pixels." },
+    { question: "Como você altera o tamanho da fonte em CSS?", options: ["font-size", "text-size", "font-style"], answer: 0, hint: "A propriedade 'font-size' define o tamanho da fonte." },
+    { question: "Qual propriedade CSS é usada para definir a margem externa de um elemento?", options: ["padding", "margin", "border"], answer: 1, hint: "A propriedade 'margin' define o espaço externo." },
+    { question: "Como você define o alinhamento do texto em um parágrafo?", options: ["text-align", "text-position", "align"], answer: 0, hint: "A propriedade 'text-align' alinha o texto." },
+    { question: "Qual propriedade CSS controla o espaçamento entre letras?", options: ["letter-spacing", "word-spacing", "line-height"], answer: 0, hint: "A propriedade 'letter-spacing' controla o espaçamento entre letras." },
+    { question: "Como você define a largura de um elemento em CSS?", options: ["width", "height", "size"], answer: 0, hint: "A propriedade 'width' define a largura do elemento." },
+    { question: "Qual propriedade CSS é usada para definir a cor de fundo de um elemento?", options: ["background-color", "color", "border-color"], answer: 0, hint: "A propriedade 'background-color' altera a cor de fundo." },
+    { question: "Como você define o estilo de borda de um elemento?", options: ["border-style", "border-color", "border-width"], answer: 0, hint: "A propriedade 'border-style' define o estilo da borda." },
+    { question: "Qual é a propriedade para definir o alinhamento vertical de um elemento em CSS?", options: ["vertical-align", "text-align", "align-items"], answer: 0, hint: "A propriedade 'vertical-align' alinha verticalmente o elemento." },
+    { question: "Como você adiciona uma sombra ao texto em CSS?", options: ["text-shadow", "shadow-text", "font-shadow"], answer: 0, hint: "A propriedade 'text-shadow' adiciona uma sombra ao texto." },
+    { question: "Qual propriedade é usada para controlar a visibilidade de um elemento?", options: ["display", "visibility", "opacity"], answer: 1, hint: "A propriedade 'visibility' controla a visibilidade do elemento." },
+    { question: "Como você altera o estilo de lista em uma lista não ordenada?", options: ["list-type", "list-style", "list-format"], answer: 1, hint: "A propriedade 'list-style' altera o estilo da lista." },
+    { question: "Qual propriedade CSS controla o espaço entre linhas de texto?", options: ["line-height", "letter-spacing", "word-spacing"], answer: 0, hint: "A propriedade 'line-height' define o espaço entre linhas." },
+    { question: "Como você aplica uma imagem de fundo a um elemento?", options: ["background-image", "image-background", "background-picture"], answer: 0, hint: "A propriedade 'background-image' define a imagem de fundo." },
+    { question: "Qual propriedade é usada para definir a borda de um elemento em CSS?", options: ["border", "outline", "edge"], answer: 0, hint: "A propriedade 'border' define a borda do elemento." },
+    { question: "Como você define a opacidade de um elemento em CSS?", options: ["opacity", "visibility", "transparency"], answer: 0, hint: "A propriedade 'opacity' define a transparência do elemento." },
+    { question: "Qual propriedade CSS controla o espaçamento interno de um elemento?", options: ["padding", "margin", "border"], answer: 0, hint: "A propriedade 'padding' define o espaçamento interno." },
+    { question: "Como você define uma transformação de escala em CSS?", options: ["transform: scale()", "scale-transform", "size-transform"], answer: 0, hint: "A propriedade 'transform: scale()' aplica uma transformação de escala." }
+    
+];
+
+        // Eventos
+        menuToggle.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', toggleMenu);
+        showScores.addEventListener('click', showHighScores);
+        showHelp.addEventListener('click', showHelpInfo);
+        restartGame.addEventListener('click', startQuiz);
+        skipBtn.addEventListener('click', skipQuestion);
+        nextBtn.addEventListener('click', nextQuestion);
+
+        function toggleMenu() {
+            sideMenu.classList.toggle('active');
+            overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function showHighScores() {
+            Swal.fire({
+                title: 'Pontuações',
+                text: 'Esta funcionalidade está em desenvolvimento.',
+                icon: 'info',
+                confirmButtonText: 'Ok'
+            });
+        }
+
+        function showHelpInfo() {
+            if (!helpUsed) {
+                if (currentQuestions.length > 0) {
+                    const hint = currentQuestions[currentQuestionIndex].hint;
+                    Swal.fire({
+                        title: 'Dica',
+                        text: hint,
+                        icon: 'info',
+                        confirmButtonText: 'Ok'
+                    });
+                    helpUsed = true;
+                } else {
+                    Swal.fire({
+                        title: 'Ajuda',
+                        text: 'Não há perguntas disponíveis.',
+                        icon: 'warning',
+                        confirmButtonText: 'Ok'
+                    });
+                }
+            } else {
+                Swal.fire({
+                    title: 'Ajuda já utilizada',
+                    text: 'Você já usou a ajuda nesta rodada.',
+                    icon: 'info',
+                    confirmButtonText: 'Ok'
+                });
+            }
+        }
+
+        function startQuiz() {
+            score = 0;
+            currentQuestionIndex = 0;
+            helpUsed = false;
+            questionSkipped = false;
+            currentQuestions = shuffleArray([...allQuestions]);
+            updateScore();
+            nextBtn.style.display = 'none';
+            restartBtn.style.display = 'none';
+            skipBtn.style.display = 'inline-block';
+            startTimer();
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentQuestionIndex < currentQuestions.length) {
+                const currentQuestion = currentQuestions[currentQuestionIndex];
+                questionEl.textContent = currentQuestion.question;
+                optionsEl.innerHTML = '';
+                currentQuestion.options.forEach((option, index) => {
+                    const btn = document.createElement('button');
+                    btn.textContent = option;
+                    btn.className = 'option';
+                    btn.addEventListener('click', () => checkAnswer(index));
+                    optionsEl.appendChild(btn);
+                });
+                resultEl.textContent = '';
+                nextBtn.style.display = 'none';
+            } else {
+                endQuiz();
+            }
+        }
+
+        function checkAnswer(selectedIndex) {
+            const correctIndex = currentQuestions[currentQuestionIndex].answer;
+            const options = document.querySelectorAll('.option');
+            options.forEach((btn, index) => {
+                btn.classList.remove('correct', 'incorrect');
+                if (index === correctIndex) {
+                    btn.classList.add('correct');
+                } else if (index === selectedIndex) {
+                    btn.classList.add('incorrect');
+                }
+                btn.disabled = true;
+            });
+            if (selectedIndex === correctIndex) {
+                score++;
+                resultEl.textContent = 'Correto!';
+                updateScore();
+                nextBtn.style.display = 'inline-block';
+            } else {
+                resultEl.textContent = 'Errado!';
+                endQuiz();
+            }
+            stopTimer();
+        }
+
+        function updateScore() {
+            scoreEl.textContent = `Pontuação: ${score} Kz`;
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            showQuestion();
+            startTimer();
+        }
+
+        function skipQuestion() {
+            if (!questionSkipped) {
+                if (currentQuestionIndex < currentQuestions.length - 1) {
+                    currentQuestionIndex++;
+                    showQuestion();
+                    startTimer();
+                    questionSkipped = true;
+                } else {
+                    Swal.fire({
+                        title: 'Nenhuma pergunta para pular',
+                        text: 'Você está na última pergunta.',
+                        icon: 'info',
+                        confirmButtonText: 'Ok'
+                    });
+                }
+            } else {
+                Swal.fire({
+                    title: 'Pergunta já pulada',
+                    text: 'Você já pulou uma pergunta nesta rodada.',
+                    icon: 'info',
+                    confirmButtonText: 'Ok'
+                });
+            }
+        }
+
+        function startTimer() {
+            timeLeft = 30;
+            timerEl.textContent = `Tempo: ${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = `Tempo: ${timeLeft}s`;
+                progress.style.width = `${(100 * (30 - timeLeft) / 30)}%`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    endQuiz();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timer);
+        }
+
+        function endQuiz() {
+            resultEl.textContent = `Quiz terminado! Pontuação final: ${score}/${currentQuestions.length}`;
+            nextBtn.style.display = 'none';
+            skipBtn.style.display = 'none';
+            restartBtn.style.display = 'inline-block';
+            stopTimer();
+            progress.style.width = '100%';
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Inicializa o quiz
+        startQuiz();
+    </script>
+</body>
+</html>
