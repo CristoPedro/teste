@@ -180,7 +180,9 @@
         <button class="skip-btn animate__animated animate__fadeIn" id="skip-btn">Pular Pergunta</button>
         <button class="restart-btn animate__animated animate__fadeIn" id="restart-btn" style="display: none;">Reiniciar Quiz</button>
     </div>
-
+    <audio id="correct-sound" src="musicCerta.mp3"></audio>
+    <audio id="wrong-sound" src="erro.mp3"></audio>
+    
     <div class="side-menu" id="side-menu">
         <ul>
             <li><a href="#" id="show-scores">Pontuações</a></li>
@@ -208,7 +210,8 @@
         const scoreEl = document.getElementById('score');
         const nextBtn = document.getElementById('next-btn');
         const restartBtn = document.getElementById('restart-btn');
-
+        const correctSound = document.getElementById('correct-sound');
+        const wrongSound = document.getElementById('wrong-sound');
         let timer;
         let timeLeft = 30;
         let currentQuestionIndex = 0;
@@ -264,187 +267,192 @@
     
 ];
 
-        // Eventos
-        menuToggle.addEventListener('click', toggleMenu);
-        overlay.addEventListener('click', toggleMenu);
-        showScores.addEventListener('click', showHighScores);
-        showHelp.addEventListener('click', showHelpInfo);
-        restartGame.addEventListener('click', startQuiz);
-        skipBtn.addEventListener('click', skipQuestion);
-        nextBtn.addEventListener('click', nextQuestion);
+      
+// Eventos
+menuToggle.addEventListener('click', toggleMenu);
+overlay.addEventListener('click', toggleMenu);
+showScores.addEventListener('click', showHighScores);
+showHelp.addEventListener('click', showHelpInfo);
+restartGame.addEventListener('click', startQuiz);
+skipBtn.addEventListener('click', skipQuestion);
+nextBtn.addEventListener('click', nextQuestion);
 
-        function toggleMenu() {
-            sideMenu.classList.toggle('active');
-            overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
-        }
+function toggleMenu() {
+    sideMenu.classList.toggle('active');
+    overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
+}
 
-        function showHighScores() {
+function showHighScores() {
+    Swal.fire({
+        title: 'Pontuações',
+        text: 'Esta funcionalidade está em desenvolvimento.',
+        icon: 'info',
+        confirmButtonText: 'Ok'
+    });
+}
+
+function showHelpInfo() {
+    if (!helpUsed) {
+        if (currentQuestions.length > 0) {
+            const hint = currentQuestions[currentQuestionIndex].hint;
             Swal.fire({
-                title: 'Pontuações',
-                text: 'Esta funcionalidade está em desenvolvimento.',
+                title: 'Dica',
+                text: hint,
+                icon: 'info',
+                confirmButtonText: 'Ok'
+            });
+            helpUsed = true;
+        } else {
+            Swal.fire({
+                title: 'Ajuda',
+                text: 'Não há perguntas disponíveis.',
+                icon: 'warning',
+                confirmButtonText: 'Ok'
+            });
+        }
+    } else {
+        Swal.fire({
+            title: 'Ajuda já utilizada',
+            text: 'Você já usou a ajuda nesta rodada.',
+            icon: 'info',
+            confirmButtonText: 'Ok'
+        });
+    }
+}
+
+function startQuiz() {
+    score = 0;
+    currentQuestionIndex = 0;
+    helpUsed = false;
+    questionSkipped = false;
+    currentQuestions = shuffleArray([...allQuestions]);
+    updateScore();
+    nextBtn.style.display = 'none';
+    restartBtn.style.display = 'none';
+    skipBtn.style.display = 'inline-block';
+    startTimer();
+    showQuestion();
+}
+
+function showQuestion() {
+    if (currentQuestionIndex < currentQuestions.length) {
+        const currentQuestion = currentQuestions[currentQuestionIndex];
+        questionEl.textContent = currentQuestion.question;
+        optionsEl.innerHTML = '';
+        currentQuestion.options.forEach((option, index) => {
+            const btn = document.createElement('button');
+            btn.textContent = option;
+            btn.className = 'option';
+            btn.addEventListener('click', () => checkAnswer(index));
+            optionsEl.appendChild(btn);
+        });
+        resultEl.textContent = '';
+        nextBtn.style.display = 'none';
+    } else {
+        endQuiz();
+    }
+}
+
+function checkAnswer(selectedIndex) {
+    const correctIndex = currentQuestions[currentQuestionIndex].answer;
+    const options = document.querySelectorAll('.option');
+    options.forEach((btn, index) => {
+        btn.classList.remove('correct', 'incorrect');
+        if (index === correctIndex) {
+            btn.classList.add('correct');
+        } else if (index === selectedIndex) {
+            btn.classList.add('incorrect');
+        }
+        btn.disabled = true;
+    });
+
+    // Verificar resposta e tocar o som apropriado
+    if (selectedIndex === correctIndex) {
+        score++;
+        resultEl.textContent = 'Correto!';
+        correctSound.play();  // Tocar som de resposta correta
+        updateScore();
+        nextBtn.style.display = 'inline-block';
+    } else {
+        resultEl.textContent = 'Errado!';
+        wrongSound.play();  // Tocar som de resposta incorreta
+        endQuiz();
+    }
+    stopTimer();
+}
+
+function updateScore() {
+    scoreEl.textContent = `Pontuação: ${score} Kz`;
+}
+
+function nextQuestion() {
+    currentQuestionIndex++;
+    showQuestion();
+    startTimer();
+}
+
+function skipQuestion() {
+    if (!questionSkipped) {
+        if (currentQuestionIndex < currentQuestions.length - 1) {
+            currentQuestionIndex++;
+            showQuestion();
+            startTimer();
+            questionSkipped = true;
+        } else {
+            Swal.fire({
+                title: 'Nenhuma pergunta para pular',
+                text: 'Você está na última pergunta.',
                 icon: 'info',
                 confirmButtonText: 'Ok'
             });
         }
+    } else {
+        Swal.fire({
+            title: 'Pergunta já pulada',
+            text: 'Você já pulou uma pergunta nesta rodada.',
+            icon: 'info',
+            confirmButtonText: 'Ok'
+        });
+    }
+}
 
-        function showHelpInfo() {
-            if (!helpUsed) {
-                if (currentQuestions.length > 0) {
-                    const hint = currentQuestions[currentQuestionIndex].hint;
-                    Swal.fire({
-                        title: 'Dica',
-                        text: hint,
-                        icon: 'info',
-                        confirmButtonText: 'Ok'
-                    });
-                    helpUsed = true;
-                } else {
-                    Swal.fire({
-                        title: 'Ajuda',
-                        text: 'Não há perguntas disponíveis.',
-                        icon: 'warning',
-                        confirmButtonText: 'Ok'
-                    });
-                }
-            } else {
-                Swal.fire({
-                    title: 'Ajuda já utilizada',
-                    text: 'Você já usou a ajuda nesta rodada.',
-                    icon: 'info',
-                    confirmButtonText: 'Ok'
-                });
-            }
-        }
-
-        function startQuiz() {
-            score = 0;
-            currentQuestionIndex = 0;
-            helpUsed = false;
-            questionSkipped = false;
-            currentQuestions = shuffleArray([...allQuestions]);
-            updateScore();
-            nextBtn.style.display = 'none';
-            restartBtn.style.display = 'none';
-            skipBtn.style.display = 'inline-block';
-            startTimer();
-            showQuestion();
-        }
-
-        function showQuestion() {
-            if (currentQuestionIndex < currentQuestions.length) {
-                const currentQuestion = currentQuestions[currentQuestionIndex];
-                questionEl.textContent = currentQuestion.question;
-                optionsEl.innerHTML = '';
-                currentQuestion.options.forEach((option, index) => {
-                    const btn = document.createElement('button');
-                    btn.textContent = option;
-                    btn.className = 'option';
-                    btn.addEventListener('click', () => checkAnswer(index));
-                    optionsEl.appendChild(btn);
-                });
-                resultEl.textContent = '';
-                nextBtn.style.display = 'none';
-            } else {
-                endQuiz();
-            }
-        }
-
-        function checkAnswer(selectedIndex) {
-            const correctIndex = currentQuestions[currentQuestionIndex].answer;
-            const options = document.querySelectorAll('.option');
-            options.forEach((btn, index) => {
-                btn.classList.remove('correct', 'incorrect');
-                if (index === correctIndex) {
-                    btn.classList.add('correct');
-                } else if (index === selectedIndex) {
-                    btn.classList.add('incorrect');
-                }
-                btn.disabled = true;
-            });
-            if (selectedIndex === correctIndex) {
-                score++;
-                resultEl.textContent = 'Correto!';
-                updateScore();
-                nextBtn.style.display = 'inline-block';
-            } else {
-                resultEl.textContent = 'Errado!';
-                endQuiz();
-            }
-            stopTimer();
-        }
-
-        function updateScore() {
-            scoreEl.textContent = `Pontuação: ${score} Kz`;
-        }
-
-        function nextQuestion() {
-            currentQuestionIndex++;
-            showQuestion();
-            startTimer();
-        }
-
-        function skipQuestion() {
-            if (!questionSkipped) {
-                if (currentQuestionIndex < currentQuestions.length - 1) {
-                    currentQuestionIndex++;
-                    showQuestion();
-                    startTimer();
-                    questionSkipped = true;
-                } else {
-                    Swal.fire({
-                        title: 'Nenhuma pergunta para pular',
-                        text: 'Você está na última pergunta.',
-                        icon: 'info',
-                        confirmButtonText: 'Ok'
-                    });
-                }
-            } else {
-                Swal.fire({
-                    title: 'Pergunta já pulada',
-                    text: 'Você já pulou uma pergunta nesta rodada.',
-                    icon: 'info',
-                    confirmButtonText: 'Ok'
-                });
-            }
-        }
-
-        function startTimer() {
-            timeLeft = 30;
-            timerEl.textContent = `Tempo: ${timeLeft}s`;
-            timer = setInterval(() => {
-                timeLeft--;
-                timerEl.textContent = `Tempo: ${timeLeft}s`;
-                progress.style.width = `${(100 * (30 - timeLeft) / 30)}%`;
-                if (timeLeft <= 0) {
-                    clearInterval(timer);
-                    endQuiz();
-                }
-            }, 1000);
-        }
-
-        function stopTimer() {
+function startTimer() {
+    timeLeft = 30;
+    timerEl.textContent = `Tempo: ${timeLeft}s`;
+    timer = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = `Tempo: ${timeLeft}s`;
+        progress.style.width = `${(100 * (30 - timeLeft) / 30)}%`;
+        if (timeLeft <= 0) {
             clearInterval(timer);
+            endQuiz();
         }
+    }, 1000);
+}
 
-        function endQuiz() {
-            resultEl.textContent = `Quiz terminado! Pontuação final: ${score}/${currentQuestions.length}`;
-            nextBtn.style.display = 'none';
-            skipBtn.style.display = 'none';
-            restartBtn.style.display = 'inline-block';
-            stopTimer();
-            progress.style.width = '100%';
-        }
+function stopTimer() {
+    clearInterval(timer);
+}
 
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
+function endQuiz() {
+    resultEl.textContent = `Quiz terminado! Pontuação final: ${score}/${currentQuestions.length}`;
+    nextBtn.style.display = 'none';
+    skipBtn.style.display = 'none';
+    restartBtn.style.display = 'inline-block';
+    stopTimer();
+    progress.style.width = '100%';
+}
 
-        // Inicializa o quiz
-        startQuiz();
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+// Inicializa o quiz
+startQuiz();
     </script>
 </body>
 </html>
